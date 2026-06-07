@@ -173,7 +173,7 @@
   </div>
 
   <button class="export-btn" id="exportBtn">잠금화면 설정하기</button>
-  <div style="text-align:center;font-size:10px;color:var(--sub);margin-top:6px;opacity:.6">v3</div>
+  <div style="text-align:center;font-size:10px;color:var(--sub);margin-top:6px;opacity:.6">v4</div>
 </div>
 
 <!-- bottom sheet -->
@@ -424,12 +424,6 @@
     var maxCellH=W*0.42;
     if(cellH>maxCellH) cellH=maxCellH;
 
-    var panelY=ty-W*0.105;
-    var panelH=(gy+cellH*rows+W*0.04)-panelY;
-
-    // glass panel
-    glassPanel(ctx, px, panelY, panelW, panelH, W*0.06, dark);
-
     // month title
     ctx.textBaseline="alphabetic";
     var mt=(curM+1)+"월";
@@ -476,16 +470,6 @@
       var isToday = curY===today.getFullYear()&&curM===today.getMonth()&&d===today.getDate();
       var k=key(curY,curM,d);
       var list=events[k]||[];
-
-      // glass chip for days with events
-      if(list.length){
-        roundRect(ctx, m+cellW*c+cellW*0.05, cy+cellH*0.03, cellW*0.9, cellH*0.94, W*0.02);
-        ctx.fillStyle=C.chip;
-        ctx.fill();
-        ctx.strokeStyle = dark?"rgba(255,255,255,0.14)":"rgba(255,255,255,0.8)";
-        ctx.lineWidth=Math.max(1,W*0.0012);
-        ctx.stroke();
-      }
 
       // date number
       var ny=cy+numF*1.5;
