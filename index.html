@@ -69,9 +69,13 @@
     box-shadow:0 2px 10px rgba(255,69,58,.5), inset 0 1px 0 rgba(255,255,255,.4);
   }
   .cell.other{opacity:.22}
+  .evs{
+    display:flex;flex-wrap:wrap;justify-content:center;align-content:flex-start;
+    gap:1px 5px;padding:0 1px;max-width:100%;
+  }
   .ev{
-    font-size:9px;font-weight:700;line-height:1.25;max-width:100%;
-    overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding:0 2px;
+    font-size:9px;font-weight:700;line-height:1.3;max-width:100%;
+    overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
   }
   .more{font-size:8.5px;color:var(--sub);font-weight:700}
   .export-btn{
@@ -153,7 +157,7 @@
     <div class="grid" id="grid"></div>
   </div>
 
-  <button class="export-btn" id="exportBtn">잠금화면 이미지 만들기</button>
+  <button class="export-btn" id="exportBtn">잠금화면 설정하기</button>
 </div>
 
 <!-- bottom sheet -->
@@ -172,7 +176,7 @@
 <!-- export overlay -->
 <div class="overlay" id="overlay">
   <img id="resultImg" alt="잠금화면 달력">
-  <p>이미지를 <b>길게 눌러</b> “사진에 추가”를 선택하세요.<br>그다음 설정 › 배경화면 › 새로운 배경화면 추가에서 적용!</p>
+  <p>이미지를 <b>길게 눌러</b> “사진에 추가” 후<br>설정 › 배경화면에서 적용하세요.</p>
   <div class="btns">
     <a class="dl" id="dlLink" download="lockscreen-calendar.png">다운로드</a>
     <button class="close" id="closeBtn">닫기</button>
@@ -231,15 +235,19 @@
       if(inMonth){
         var k = key(curY,curM,d);
         var list = events[k]||[];
-        if(list.length) cell.classList.add("has-ev");
-        for(var j=0;j<Math.min(list.length,3);j++){
-          var ev = document.createElement("div");
-          ev.className="ev"; ev.textContent=list[j].t; ev.style.color=list[j].c;
-          cell.appendChild(ev);
-        }
-        if(list.length>3){
-          var mo=document.createElement("div"); mo.className="more"; mo.textContent="+"+(list.length-3);
-          cell.appendChild(mo);
+        if(list.length){
+          cell.classList.add("has-ev");
+          var evs=document.createElement("div"); evs.className="evs";
+          for(var j=0;j<Math.min(list.length,4);j++){
+            var ev = document.createElement("div");
+            ev.className="ev"; ev.textContent=list[j].t; ev.style.color=list[j].c;
+            evs.appendChild(ev);
+          }
+          if(list.length>4){
+            var mo=document.createElement("div"); mo.className="more"; mo.textContent="+"+(list.length-4);
+            evs.appendChild(mo);
+          }
+          cell.appendChild(evs);
         }
         (function(kk){ cell.onclick=function(){ openSheet(kk); }; })(k);
       }
@@ -361,7 +369,11 @@
 
   /* ---------- export to canvas ---------- */
   function draw(){
-    var wh=device.split("x"), W=+wh[0], H=+wh[1];
+    // auto-detect this phone's exact screen resolution
+    var dpr=window.devicePixelRatio||3;
+    var W=Math.round(Math.min(screen.width,screen.height)*dpr);
+    var H=Math.round(Math.max(screen.width,screen.height)*dpr);
+    if(!W||!H||H/W<1.6){ W=1080; H=2340; }   // fallback (desktop etc.)
     var cv=document.createElement("canvas"); cv.width=W; cv.height=H;
     var ctx=cv.getContext("2d");
     var dark = true;
@@ -388,9 +400,9 @@
     var first=new Date(curY,curM,1).getDay();
     var days=new Date(curY,curM+1,0).getDate();
     var rows=Math.ceil((first+days)/7);
-    var bottomPad=H*0.055;
+    var bottomPad=H*0.03;
     var cellH=(H-gy-bottomPad-W*0.04)/rows;
-    var maxCellH=W*0.30;
+    var maxCellH=W*0.42;
     if(cellH>maxCellH) cellH=maxCellH;
 
     var panelY=ty-W*0.105;
@@ -483,32 +495,76 @@
       ctx.font=(isToday?"800 ":"600 ")+numF+"px "+F;
       ctx.fillText(d, cx, ny);
 
-      // events
-      ctx.font="700 "+evF+"px "+F;
-      var maxLines=Math.max(0, Math.floor((cellH-numF*2.1)/evLH));
-      var shown=Math.min(list.length, maxLines);
-      var extra=list.length-shown;
-      if(extra>0 && shown>0) shown--;
-      for(var j=0;j<shown;j++){
-        ctx.fillStyle=list[j].c;
-        ctx.fillText(truncate(list[j].t, cellW*0.88), cx, ny+numF*0.9+evLH*(j+1)-evLH*0.25);
-      }
-      if(list.length>shown){
-        ctx.fillStyle=C.sub;
-        ctx.fillText("+"+(list.length-shown), cx, ny+numF*0.9+evLH*(shown+1)-evLH*0.25);
+      // events: horizontal flow, wrapping to next line when full
+      if(list.length){
+        ctx.font="700 "+evF+"px "+F;
+        var maxW=cellW*0.9;
+        var gap=evF*0.55;
+        var maxLines=Math.max(1, Math.floor((cellH-numF*2.1)/evLH));
+        // build wrapped lines of tokens
+        var lines=[], cur=[], curW=0, overflow=0;
+        for(var j=0;j<list.length;j++){
+          var txt=truncate(list[j].t, maxW);
+          var tw2=ctx.measureText(txt).width;
+          var need=cur.length? curW+gap+tw2 : tw2;
+          if(cur.length && need>maxW){
+            lines.push(cur);
+            if(lines.length>=maxLines){ overflow=list.length-j; cur=[]; break; }
+            cur=[{t:txt,c:list[j].c,w:tw2}]; curW=tw2;
+          } else {
+            cur.push({t:txt,c:list[j].c,w:tw2}); curW=need;
+          }
+        }
+        if(cur.length){
+          if(lines.length<maxLines) lines.push(cur);
+          else overflow+=cur.length;
+        }
+        for(var li=0;li<lines.length;li++){
+          var ln=lines[li];
+          var totW=0;
+          for(var q=0;q<ln.length;q++) totW+=ln[q].w;
+          totW+=gap*(ln.length-1);
+          var x=cx-totW/2;
+          var yy=ny+numF*0.9+evLH*(li+1)-evLH*0.25;
+          ctx.textAlign="left";
+          for(var q2=0;q2<ln.length;q2++){
+            ctx.fillStyle=ln[q2].c;
+            ctx.fillText(ln[q2].t, x, yy);
+            x+=ln[q2].w+gap;
+          }
+          ctx.textAlign="center";
+        }
+        if(overflow>0){
+          ctx.fillStyle=C.sub;
+          ctx.fillText("+"+overflow, cx, ny+numF*0.9+evLH*(lines.length+1)-evLH*0.25);
+        }
       }
     }
     ctx.textAlign="left";
     return cv;
   }
 
-  $("exportBtn").onclick=function(){
-    var cv=draw();
+  function showOverlay(cv){
     var url=cv.toDataURL("image/png");
     $("resultImg").src=url;
     $("dlLink").href=url;
     $("dlLink").download="lockscreen-"+curY+"-"+String(curM+1).padStart(2,"0")+".png";
     $("overlay").classList.add("show");
+  }
+  $("exportBtn").onclick=function(){
+    var cv=draw();
+    // try native share sheet → "배경화면으로 사용" (no save needed)
+    if(navigator.share && navigator.canShare && cv.toBlob){
+      cv.toBlob(function(b){
+        if(!b){ showOverlay(cv); return; }
+        var f=new File([b],"calendar.png",{type:"image/png"});
+        if(navigator.canShare({files:[f]})){
+          navigator.share({files:[f]}).catch(function(e){
+            if(e && e.name!=="AbortError") showOverlay(cv);
+          });
+        } else showOverlay(cv);
+      },"image/png");
+    } else showOverlay(cv);
   };
   $("closeBtn").onclick=function(){ $("overlay").classList.remove("show"); };
 
