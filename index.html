@@ -173,7 +173,7 @@
   </div>
 
   <button class="export-btn" id="exportBtn">잠금화면 설정하기</button>
-  <div style="text-align:center;font-size:10px;color:var(--sub);margin-top:6px;opacity:.6">v4</div>
+  <div style="text-align:center;font-size:10px;color:var(--sub);margin-top:6px;opacity:.6">v5</div>
 </div>
 
 <!-- bottom sheet -->
@@ -406,9 +406,7 @@
 
     /* layout */
     var top=H*0.325;                    // reserved for iOS clock (calendar starts below time)
-    var px=W*0.045;                     // panel side margin
-    var panelW=W-px*2;
-    var m=px+W*0.045;                   // content margin
+    var m=W*0.03;                       // content side margin (fill the width)
     var innerW=W-m*2;
     var cellW=innerW/7;
 
