@@ -22,7 +22,11 @@
     max-width:480px;margin:0 auto;
     background:#000;
   }
-  .wrap{padding:14px 16px 40px}
+  .wrap{
+    padding:14px 16px calc(16px + env(safe-area-inset-bottom));
+    display:flex;flex-direction:column;
+    min-height:100vh;min-height:100dvh;
+  }
   /* glass primitives */
   .glass{
     background:var(--glass);
@@ -45,14 +49,20 @@
     font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;
   }
   /* calendar card */
-  .cal{border-radius:24px;padding:14px 8px 10px}
+  .cal{
+    border-radius:24px;padding:14px 8px 10px;
+    flex:1;display:flex;flex-direction:column;
+  }
   .weekdays{display:grid;grid-template-columns:repeat(7,1fr);margin-bottom:6px}
   .weekdays span{text-align:center;font-size:11px;font-weight:700;color:var(--sub)}
   .weekdays span:first-child{color:var(--accent)}
   .weekdays span:last-child{color:var(--blue)}
-  .grid{display:grid;grid-template-columns:repeat(7,1fr)}
+  .grid{
+    display:grid;grid-template-columns:repeat(7,1fr);
+    flex:1;grid-auto-rows:1fr;
+  }
   .cell{
-    min-height:78px;padding:5px 1px;border-radius:12px;cursor:pointer;
+    min-height:64px;padding:5px 1px;border-radius:12px;cursor:pointer;
     display:flex;flex-direction:column;align-items:center;gap:2px;
     transition:background .15s;
   }
@@ -70,8 +80,8 @@
   }
   .cell.other{opacity:.22}
   .evs{
-    display:flex;flex-wrap:wrap;justify-content:center;align-content:flex-start;
-    gap:1px 5px;padding:0 1px;max-width:100%;
+    display:flex;flex-wrap:wrap;justify-content:flex-start;align-content:flex-start;
+    gap:1px 5px;padding:0 3px;width:100%;text-align:left;
   }
   .ev{
     font-size:9px;font-weight:700;line-height:1.3;max-width:100%;
@@ -79,7 +89,12 @@
   }
   .more{font-size:8.5px;color:var(--sub);font-weight:700}
   .export-btn{
-    width:100%;margin-top:16px;height:52px;border:none;background:none;
+    width:100%;margin-top:14px;height:54px;flex:none;
+    border:1px solid var(--stroke);border-radius:18px;
+    background:var(--glass);
+    -webkit-backdrop-filter:blur(28px) saturate(180%);
+    backdrop-filter:blur(28px) saturate(180%);
+    box-shadow:0 8px 32px rgba(0,0,0,.18), inset 0 1px 0 var(--stroke-hi);
     color:#fff;font-size:16px;font-weight:800;cursor:pointer;letter-spacing:-.3px;
     font-family:inherit;
   }
@@ -519,25 +534,23 @@
           if(lines.length<maxLines) lines.push(cur);
           else overflow+=cur.length;
         }
+        var lx0=m+cellW*c+cellW*0.07;   // left edge of cell content
+        ctx.textAlign="left";
         for(var li=0;li<lines.length;li++){
           var ln=lines[li];
-          var totW=0;
-          for(var q=0;q<ln.length;q++) totW+=ln[q].w;
-          totW+=gap*(ln.length-1);
-          var x=cx-totW/2;
+          var x=lx0;
           var yy=ny+numF*0.9+evLH*(li+1)-evLH*0.25;
-          ctx.textAlign="left";
           for(var q2=0;q2<ln.length;q2++){
             ctx.fillStyle=ln[q2].c;
             ctx.fillText(ln[q2].t, x, yy);
             x+=ln[q2].w+gap;
           }
-          ctx.textAlign="center";
         }
         if(overflow>0){
           ctx.fillStyle=C.sub;
-          ctx.fillText("+"+overflow, cx, ny+numF*0.9+evLH*(lines.length+1)-evLH*0.25);
+          ctx.fillText("+"+overflow, lx0, ny+numF*0.9+evLH*(lines.length+1)-evLH*0.25);
         }
+        ctx.textAlign="center";
       }
     }
     ctx.textAlign="left";
