@@ -384,11 +384,14 @@
 
   /* ---------- export to canvas ---------- */
   function draw(){
-    // auto-detect this phone's exact screen resolution
+    // auto-detect this phone's screen, then render 1.5x larger:
+    // iOS force-zooms wallpapers smaller than the native screen, which crops
+    // the calendar. An oversized image (same aspect ratio) fits exactly.
     var dpr=window.devicePixelRatio||3;
     var W=Math.round(Math.min(screen.width,screen.height)*dpr);
     var H=Math.round(Math.max(screen.width,screen.height)*dpr);
     if(!W||!H||H/W<1.6){ W=1080; H=2340; }   // fallback (desktop etc.)
+    W=Math.round(W*1.5); H=Math.round(H*1.5);
     var cv=document.createElement("canvas"); cv.width=W; cv.height=H;
     var ctx=cv.getContext("2d");
     var dark = true;
@@ -415,7 +418,7 @@
     var first=new Date(curY,curM,1).getDay();
     var days=new Date(curY,curM+1,0).getDate();
     var rows=Math.ceil((first+days)/7);
-    var bottomPad=H*0.03;
+    var bottomPad=H*0.105;   // keep clear of flashlight/camera buttons
     var cellH=(H-gy-bottomPad-W*0.04)/rows;
     var maxCellH=W*0.42;
     if(cellH>maxCellH) cellH=maxCellH;
