@@ -404,7 +404,7 @@
     ctx.fillRect(0,0,W,H);
 
     /* layout */
-    var top=H*0.262;                    // reserved for iOS clock
+    var top=H*0.315;                    // reserved for iOS clock (calendar starts below time)
     var px=W*0.045;                     // panel side margin
     var panelW=W-px*2;
     var m=px+W*0.045;                   // content margin
@@ -418,7 +418,7 @@
     var first=new Date(curY,curM,1).getDay();
     var days=new Date(curY,curM+1,0).getDate();
     var rows=Math.ceil((first+days)/7);
-    var bottomPad=H*0.105;   // keep clear of flashlight/camera buttons
+    var bottomPad=H*0.14;    // keep clear of flashlight/camera buttons
     var cellH=(H-gy-bottomPad-W*0.04)/rows;
     var maxCellH=W*0.42;
     if(cellH>maxCellH) cellH=maxCellH;
